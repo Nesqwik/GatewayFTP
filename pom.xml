@@ -293,5 +293,15 @@
             <artifactId>powermock-api-mockito</artifactId>
             <version>1.6.2</version>
         </dependency>
+        <dependency>
+        <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>3.0.2</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+    <properties>
+        <exec.mainClass>car.tp2.Starter</exec.mainClass>
+    </properties>
+
 </project>
