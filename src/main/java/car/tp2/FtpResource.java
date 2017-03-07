@@ -1,6 +1,10 @@
 package car.tp2;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.SocketException;
 
 import javax.ws.rs.GET;
@@ -9,7 +13,12 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 
+import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
 
@@ -18,15 +27,14 @@ import org.apache.commons.net.ftp.FTPFile;
  * 
  * 		http://localhost:8080/rest/tp2/helloworld
  * 
- * @author Lionel Seinturier <Lionel.Seinturier@univ-lille1.fr>
  */
 @Path("/ftp")
 public class FtpResource {
 
 	public FtpResource() {
-		if (!client.isConnected()) {
+		if (!ftpClient.isConnected()) {
 			try {
-				client.connect("ftp.univ-lille1.fr");
+				ftpClient.connect("ftp.univ-lille1.fr");
 			} catch (SocketException e) {
 				throw new RuntimeException(e);
 			} catch (IOException e) {
@@ -35,18 +43,18 @@ public class FtpResource {
 		}
 	}
 	
-	private FTPClient client = new FTPClient();
+	private FTPClient ftpClient = new FTPClient();
 	
 	
 	@POST
 	@Path("/user/{userName}")
 	@Produces("application/json")
-	public HttpResponse<Void> user(@PathParam("userName") String userName) {
+	public Response user(@PathParam("userName") String userName) {
 		try {
-			int code = client.user(userName);
-			return new HttpResponse<Void>(code); 
+			int code = ftpClient.user(userName);
+			return Response.status(code).build();
 		} catch (IOException e) {
-			return new HttpResponse<Void>(500);
+			return Response.status(500).build();
 		}
 	}
 	
@@ -54,25 +62,25 @@ public class FtpResource {
 	@POST
 	@Path("/pass/{password}")
 	@Produces("application/json")
-	public HttpResponse<Void> password(@PathParam("password") String password) {
+	public Response password(@PathParam("password") String password) {
 		try {
-			int code = client.pass(password);
-			return new HttpResponse<Void>(code); 
+			int code = ftpClient.pass(password);
+			return Response.status(code).build(); 
 		} catch (IOException e) {
-			return new HttpResponse<Void>(500);
+			return Response.status(500).build();
 		}
 	}
 	
 	@GET
 	@Path("/list")
 	@Produces("application/json")
-	public HttpResponse<FTPFile[]> list() {
+	public Response list() {
 		try {
-			int code = client.list();
-			FTPFile[] files = client.listDirectories();
-			return new HttpResponse<FTPFile[]>(code, files); 
+			int code = ftpClient.list();
+			FTPFile[] files = ftpClient.listDirectories();
+			return Response.status(code).entity(files).build();
 		} catch (IOException e) {
-			return new HttpResponse<FTPFile[]>(500);
+			return Response.status(500).build();
 		}
 	}
 	
@@ -80,14 +88,14 @@ public class FtpResource {
 	@GET
 	@Path("/pwd")
 	@Produces("application/json")
-	public HttpResponse<String> pwd() {
+	public Response pwd() {
 		try {
 			// TODO pwd renvoie \"/\" : faire mieux
-			int code = client.pwd();
-			String data = client.printWorkingDirectory();
-			return new HttpResponse<String>(code, data); 
+			int code = ftpClient.pwd();
+			String data = ftpClient.printWorkingDirectory(); 
+			return Response.status(code).entity(data).build();
 		} catch (IOException e) {
-			return new HttpResponse<String>(500);
+			return Response.status(500).build();
 		}
 	}
 	
@@ -95,25 +103,25 @@ public class FtpResource {
 	@PUT
 	@Path("/quit")
 	@Produces("application/json")
-	public HttpResponse<String> quit() {
+	public Response quit() {
 		try {
-			int code = client.quit();
-			client.disconnect();
-			return new HttpResponse<String>(code); 
+			int code = ftpClient.quit();
+			ftpClient.disconnect();
+			return Response.status(code).build();
 		} catch (IOException e) {
-			return new HttpResponse<String>(500);
+			return Response.status(500).build(); 
 		}
 	}
 	
 	@PUT
 	@Path("/cwd/{path}")
 	@Produces("application/json")
-	public HttpResponse<String> cwd(@PathParam("path") String path) {
+	public Response cwd(@PathParam("path") String path) {
 		try {
-			int code = client.cwd(path); 
-			return new HttpResponse<String>(code); 
+			int code = ftpClient.cwd(path); 
+			return Response.status(code).build();
 		} catch (IOException e) {
-			return new HttpResponse<String>(500);
+			return Response.status(500).build();
 		}
 	}
 	
@@ -121,13 +129,52 @@ public class FtpResource {
 	@PUT
 	@Path("/cdup")
 	@Produces("application/json")
-	public HttpResponse<String> cdup() {
+	public Response cdup() {
 		try {
-			int code = client.cdup(); 
-			return new HttpResponse<String>(code);
+			int code = ftpClient.cdup(); 
+			return Response.status(code).build();
 		} catch (IOException e) {
-			return new HttpResponse<String>(500);
+			return Response.status(500).build();
 		}
+	}
+	
+	@GET
+	@Path("/download/{filepath}")
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public StreamingOutput download(@PathParam("filepath") final String filepath) {
+            
+        return new StreamingOutput() {
+			public void write(OutputStream output) throws WebApplicationException {
+				
+
+				try {
+					
+					final BufferedOutputStream outputStream = new BufferedOutputStream(output);
+					final BufferedInputStream inputStream = new BufferedInputStream(ftpClient.retrieveFileStream(filepath));
+					ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+					final byte[] bytesArray = new byte[4096];
+					
+					int bytesRead = -1;
+					while ((bytesRead = inputStream.read(bytesArray)) != -1) {
+						outputStream.write(bytesArray, 0, bytesRead);
+					}
+					
+					output.close();
+					inputStream.close();
+					ftpClient.completePendingCommand();
+				} catch (IOException e) {
+					try {
+						output.close();
+						ftpClient.completePendingCommand();
+					} catch (IOException e1) {
+						throw new WebApplicationException(e1);
+					}
+					
+					throw new WebApplicationException(e);
+				}				
+			}
+		};
+		
 	}
 }
 
