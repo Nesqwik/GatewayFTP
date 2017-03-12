@@ -29,52 +29,11 @@ import org.apache.commons.net.ftp.FTPFile;
 public class FtpResource {
 
 	public FtpResource() {
-		
+
 	}
 	
 	private final FtpClientFactory ftpClientFactory = new FtpClientFactory();
-	
-	
-	@GET
-	@Path("/")
-	@Produces(MediaType.TEXT_HTML)
-	public String loginForm() {
-		return HtmlResponse.loginForm();
-	}
-	
-	@POST
-	@Path("/login")
-	@Produces(MediaType.TEXT_HTML)
-	public Response login(@FormParam("username") final String username, @FormParam("password") final String password) {
-		return list(username, password);
-	}
-	
-	/*
-	@POST
-	@Path("/user/{userName}")
-	@Produces(MediaType.TEXT_HTML)
-	public Response user(@PathParam("userName") final String userName) {
-		try {
-			final int code = ftpClient.user(userName);
-			return Response.status(code).build();
-		} catch (final IOException e) {
-			return Response.status(500).build();
-		}
-	}
-	
-	
-	@POST
-	@Path("/pass/{password}")
-	@Produces(MediaType.TEXT_HTML)
-	public Response password(@PathParam("password") final String password) {
-		try {
-			final int code = ftpClient.pass(password);
-			return Response.status(code).build(); 
-		} catch (final IOException e) {
-			return Response.status(500).build();
-		}
-	}
-	*/
+
 	
 	@GET
 	@Path("/list")
