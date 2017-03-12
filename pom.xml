@@ -294,11 +294,17 @@
             <version>1.6.2</version>
         </dependency>
         <dependency>
-        <groupId>io.rest-assured</groupId>
+        	<groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
             <version>3.0.2</version>
             <scope>test</scope>
         </dependency>
+         <!-- https://mvnrepository.com/artifact/org.mockftpserver/MockFtpServer -->
+		<dependency>
+    		<groupId>org.mockftpserver</groupId>
+    		<artifactId>MockFtpServer</artifactId>
+    		<version>2.7.1</version>
+		</dependency>
     </dependencies>
     <properties>
         <exec.mainClass>car.tp2.Starter</exec.mainClass>

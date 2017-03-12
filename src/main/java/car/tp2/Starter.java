@@ -4,6 +4,7 @@ import org.apache.cxf.transport.servlet.CXFServlet;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.mockftpserver.fake.FakeFtpServer;
 import org.springframework.web.context.ContextLoaderListener;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 
@@ -19,6 +20,16 @@ public class Starter {
 	public static void main( final String[] args ) throws Exception {
 		
 		Server server = new Server( 8080 );
+		
+		if (args.length == 1 && args[0].equals("test")) {
+			FakeFtpServer fake = FakeFTP.getInstance();
+			Constants.put("host", "localhost");
+			Constants.put("port", fake.getServerControlPort() + "");
+			System.out.println(Constants.get("port"));
+		} else {
+			Constants.put("host", "localhost");
+			Constants.put("port", "2020");
+		}
 		        
  		final ServletHolder servletHolder = new ServletHolder( new CXFServlet() );
  		final ServletContextHandler context = new ServletContextHandler(); 		

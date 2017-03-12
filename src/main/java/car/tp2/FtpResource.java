@@ -3,7 +3,6 @@ package car.tp2;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.SocketException;
 
@@ -34,7 +33,10 @@ public class FtpResource {
 	public FtpResource() {
 		if (!ftpClient.isConnected()) {
 			try {
-				ftpClient.connect("ftp.univ-lille1.fr");
+//				ftpClient.connect("ftp.univ-lille1.fr");
+				String host = Constants.get("host");
+				int port = Integer.parseInt(Constants.get("port"));
+				ftpClient.connect(host, port);
 			} catch (SocketException e) {
 				throw new RuntimeException(e);
 			} catch (IOException e) {
@@ -44,7 +46,6 @@ public class FtpResource {
 	}
 	
 	private FTPClient ftpClient = new FTPClient();
-	
 	
 	@POST
 	@Path("/user/{userName}")
