@@ -48,7 +48,7 @@ public class FtpResourceTest {
 			queryParam("username", user).
 			queryParam("password", pass).
 		expect().
-			statusCode(230).
+			statusCode(200).
 		when().
 			post("login");
 	}

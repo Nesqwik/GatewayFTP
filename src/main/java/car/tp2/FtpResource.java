@@ -2,9 +2,13 @@ package car.tp2;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.file.Paths;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -19,6 +23,10 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
+import org.apache.cxf.jaxrs.ext.multipart.Attachment;
+import org.apache.cxf.jaxrs.ext.multipart.Multipart;
+
+import com.sun.istack.NotNull;
 
 /**
  * Exemple de ressource REST accessible a l'adresse :
@@ -89,15 +97,22 @@ public class FtpResource {
 	}
 	
 	private String getClearedPath(final String path) {
-		return path.replace("%2F", "/");
+		try {
+			return URLDecoder.decode(path, "UTF-8");
+		} catch (final UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
 	}
 	
 	private String getNormalizedPath(final String path) {
-		return Paths.get(path.replace("//", "/")).normalize().toString().replace("\\", "/").replace("/", "%2F");
+		try {
+			return URLEncoder.encode(Paths.get(path.replace("//", "/")).normalize().toString().replace("\\", "/"), "UTF-8");
+		} catch (final UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
 	}
 	
-	private String newListLine(final boolean isDir, final String path, final String username, final String password, final String name) {
-		final String idsParams = "?username=" + username + "&password=" + password;
+	private String newListLine(final boolean isDir, final String path, final String idsParams, final String name) {
 		if(isDir) {
 			if(name.equals("..")) {
 				return "<tr>" + 
@@ -131,17 +146,35 @@ public class FtpResource {
 				"</form>";
 	}
 	
+	private String newDirForm(final String path,  final String idsParams) {
+		return "<form action=\"/rest/tp2/ftp/mkdir/" + getNormalizedPath(path) + idsParams + "\" method=\"POST\">" + 
+				"<input type=\"text\" name=\"name\" />" +
+				"<input type=\"submit\" value=\"Créer dossier\" />" + 
+			"</form>";
+	}
+	
+	private String uploadForm(final String path, final String idsParams) {
+		return "<form action=\"/rest/tp2/ftp/upload/" + getNormalizedPath(path) + idsParams + "\" method=\"post\" enctype=\"multipart/form-data\">" +
+					"Select a file : <input type=\"file\" name=\"file\" size=\"45\" />" + 
+					"<input type=\"submit\" value=\"Envoyer fichier\" />" + 
+				"</form>";
+	}
+	
 	private String formatList(final String path, final FTPFile[] files, final String username, final String password) {
-		String html = "<html><head><meta charset=\"UTF-8\"></head><body><table border=\"\">";
+		String html = "<html><head><meta charset=\"UTF-8\"></head><body>";
+		final String idsParams = "?username=" + username + "&password=" + password;
+		html += newDirForm(path, idsParams);
+		html += uploadForm(path, idsParams);
+		html += "<table border=\"\">";
 		//html += "<li>" + HtmlResponse.getButton(" -> ..", "/rest/tp2/ftp/list/" + getNormalizedPath(path + "../") , "POST", username, password) + "</li>";
-		if(!path.replace("//", "/").equals("/")) {			
-			html += newListLine(true, path, username, password, "..");
+		if(!getClearedPath(getNormalizedPath(path)).equals("/")) {			
+			html += newListLine(true, path, idsParams, "..");
 		}
 		for(final FTPFile f : files) {
 			if(f.isDirectory()) {
-				html += newListLine(true, path, username, password, f.getName());
+				html += newListLine(true, path, idsParams, f.getName());
 			} else {
-				html += newListLine(false, path, username, password, f.getName());
+				html += newListLine(false, path, idsParams, f.getName());
 			}
 		}
 		html += "</table></body></html>";
@@ -151,62 +184,6 @@ public class FtpResource {
 	
 	
 	
-	
-/*
-	@GET
-	@Path("/pwd")
-	@Produces(MediaType.TEXT_HTML)
-	public Response pwd() {
-		try {
-			// TODO pwd renvoie \"/\" : faire mieux
-			final int code = ftpClient.pwd();
-			final String data = ftpClient.printWorkingDirectory(); 
-			return Response.status(code).entity(data).build();
-		} catch (final IOException e) {
-			return Response.status(500).build();
-		}
-	}
-*/
-	/*
-	@PUT
-	@Path("/quit")
-	@Produces(MediaType.TEXT_HTML)
-	public Response quit() {
-		try {
-			final int code = ftpClient.quit();
-			ftpClient.disconnect();
-			return Response.status(code).build();
-		} catch (final IOException e) {
-			return Response.status(500).build(); 
-		}
-	}
-	*/
-/*	
-	@POST 
-	@Path("/cwd/{path}")
-	@Produces(MediaType.TEXT_HTML)
-	public Response cwd(@PathParam("path") final String path) {
-		try {
-			ftpClient.cwd(path); 
-			return list();
-		} catch (final IOException e) {
-			return Response.status(500).build();
-		}
-	}
-
-	
-	@POST
-	@Path("/cdup")
-	@Produces(MediaType.TEXT_HTML)
-	public Response cdup() {
-		try {
-			ftpClient.cdup(); 
-			return list();
-		} catch (final IOException e) {
-			return Response.status(500).build();
-		}
-	}
-*/
 
 	@GET
 	@Path("/rmdir/{path}")
@@ -280,14 +257,59 @@ public class FtpResource {
 			ftpClient.setBufferSize(60000);
 			if(ftpClient.retrieveFile(filepath, response.getOutputStream())) {
 				response.getOutputStream().close();
+				ftpClient.disconnect();
 				return Response.ok().build();
 			}
-			
+			ftpClient.disconnect();
 			return Response.ok().build();
 		} catch (final IOException e) {
 			return Response.ok().build();
 		}
 		
+	}
+	
+	
+	@POST
+	@Path("/upload/{path}")
+	@Consumes(MediaType.MULTIPART_FORM_DATA)
+	@Produces(MediaType.TEXT_HTML)
+	public Response uploadFile(
+		@Multipart(value = "file") @NotNull final Attachment attachment,
+		@PathParam("path") final String path,
+		@QueryParam("username") final String username, @QueryParam("password") final String password) {
+		try {
+			final FTPClient ftpClient = ftpClientFactory.newFtpInstance(username, password);
+			if (ftpClient == null) {
+				return Response.status(401).entity(HtmlResponse.unauthorized()).build();
+			}
+			final String filepath = getClearedPath(path) + attachment.getDataHandler().getName();
+			ftpClient.storeFile(filepath, attachment.getDataHandler().getInputStream());
+		} catch (final IOException e) {
+			return Response.ok().build();
+		}
+		
+
+		return list(path, username, password);
+
+	} 
+	
+	@POST
+	@Path("/mkdir/{path}")
+	@Produces(MediaType.TEXT_HTML)
+	public Response mkdir(@PathParam("path") final String path, @FormParam("name") final String name, @QueryParam("username") final String username, @QueryParam("password") final String password) {
+		try {
+			final FTPClient ftpClient = ftpClientFactory.newFtpInstance(username, password);
+			if (ftpClient == null) {
+				return Response.status(401).entity(HtmlResponse.unauthorized()).build();
+			}
+			final String createPath = getClearedPath(path) + "/" + name;
+			
+			ftpClient.mkd(createPath);
+			
+			return list(path, username, password);
+		} catch (final IOException e) {
+			return Response.status(500).build();
+		}
 	}
 }
 
