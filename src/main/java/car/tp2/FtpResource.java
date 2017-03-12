@@ -125,21 +125,50 @@ public class FtpResource {
 		return Paths.get(path.replace("//", "/")).normalize().toString().replace("\\", "/").replace("/", "%2F");
 	}
 	
+	private String newListLine(final boolean isDir, final String path, final String username, final String password, final String name) {
+		final String idsParams = "?username=" + username + "&password=" + password;
+		if(isDir) {
+			return "<tr>" + 
+					"<td>Dir</td>" +
+					"<td><a href=\"/rest/tp2/ftp/list/" + getNormalizedPath(path + "./" + name) + idsParams + "\" >"+name+"</a></td>" + 
+					"<td><a href=\"/rest/tp2/ftp/rmdir/" + getNormalizedPath(path + "./" + name) + idsParams + "\">delete</a></td>" + 
+					"<td>"+ renameForm(name, path, idsParams) +"</td>" + 
+					"</tr>";
+		} else {
+			return "<tr>" + 
+					"<td>File</td>" +
+					"<td><a href=\"/rest/tp2/ftp/download/" + getNormalizedPath(path + name) + idsParams + "\" >"+name+"</a></td>" + 
+					"<td><a href=\"/rest/tp2/ftp/dele/" + getNormalizedPath(path + "./" + name) + idsParams + "\">delete</a></td>" + 
+					"<td>"+ renameForm(name, path, idsParams) +"</td>" + 
+					"</tr>";
+		}
+	}
+	
+	private String renameForm(final String name, final String path, final String idsParams) {
+		return "<form action=\"/rest/tp2/ftp/rename/" + getNormalizedPath(path) + idsParams + "\" method=\"POST\">" + 
+					"<input type=\"hidden\" name=\"oldName\" value=\"" + name + "\" />" + 
+					"<input type=\"text\" name=\"newName\" />" +
+					"<input type=\"submit\" value=\"renommer\" />" + 
+				"</form>";
+	}
+	
 	private String formatList(final String path, final FTPFile[] files, final String username, final String password) {
-		String html = "<html><body><ul>";
+		String html = "<html><body><table border=\"\">";
 		//html += "<li>" + HtmlResponse.getButton(" -> ..", "/rest/tp2/ftp/list/" + getNormalizedPath(path + "../") , "POST", username, password) + "</li>";
-		html += "<li>-> <a href=\"/rest/tp2/ftp/list/" + getNormalizedPath(path + "./..") + "?username=" + username + "&password=" + password + "\" >..</a></li>";
+		html += newListLine(true, path, username, password, "..");
 		for(final FTPFile f : files) {
 			if(f.isDirectory()) {
-				//html += "<li>" + HtmlResponse.getButton(" -> " + f.getName(), "/rest/tp2/ftp/list/" + getNormalizedPath(path + f.getName() + "/"), "POST", username, password) + "</li>";
-				html += "<li>-> <a href=\"/rest/tp2/ftp/list/" + getNormalizedPath(path + "./" + f.getName()) + "?username=" + username + "&password=" + password + "\" >" + f.getName() + "</a></li>";
+				html += newListLine(true, path, username, password, f.getName());
 			} else {
-				html += "<li><a href=\"/rest/tp2/ftp/download/" + getNormalizedPath(path + f.getName()) + "?username=" + username + "&password=" + password + "\" >" + f.getName() + "</a></li>";
+				html += newListLine(false, path, username, password, f.getName());
 			}
 		}
-		html += "</ul></body></html>";
+		html += "</table></body></html>";
 		return html;
 	}
+	
+	
+	
 	
 /*
 	@GET
@@ -197,6 +226,62 @@ public class FtpResource {
 	}
 */
 
+	@GET
+	@Path("/rmdir/{path}")
+	@Produces(MediaType.TEXT_HTML)
+	public Response rmdir(@PathParam("path") final String path, @QueryParam("username") final String username, @QueryParam("password") final String password) {
+		try {
+			final FTPClient ftpClient = ftpClientFactory.newFtpInstance(username, password);
+			if (ftpClient == null) {
+				return Response.status(401).entity(HtmlResponse.unauthorized()).build();
+			}
+			System.out.println("remove : " + getClearedPath(path));
+			ftpClient.rmd(getClearedPath(path)); 
+			
+			return list(path + "/..", username, password);
+		} catch (final IOException e) {
+			return Response.status(500).build();
+		}
+	}
+	
+	@GET
+	@Path("/dele/{path}")
+	@Produces(MediaType.TEXT_HTML)
+	public Response dele(@PathParam("path") final String path, @QueryParam("username") final String username, @QueryParam("password") final String password) {
+		try {
+			final FTPClient ftpClient = ftpClientFactory.newFtpInstance(username, password);
+			if (ftpClient == null) {
+				return Response.status(401).entity(HtmlResponse.unauthorized()).build();
+			}
+			System.out.println("remove : " + getClearedPath(path));
+			ftpClient.dele(getClearedPath(path)); 
+			
+			return list(path + "/..", username, password);
+		} catch (final IOException e) {
+			return Response.status(500).build();
+		}
+	}
+	
+	@POST
+	@Path("/rename/{path}")
+	@Produces(MediaType.TEXT_HTML)
+	public Response rename(@PathParam("path") final String path, @FormParam("oldName") final String oldName, @FormParam("newName") final String newName, @QueryParam("username") final String username, @QueryParam("password") final String password) {
+		try {
+			final FTPClient ftpClient = ftpClientFactory.newFtpInstance(username, password);
+			if (ftpClient == null) {
+				return Response.status(401).entity(HtmlResponse.unauthorized()).build();
+			}
+			final String from = getClearedPath(path) + "/" + oldName;
+			final String to = getClearedPath(path) + "/" + newName;
+			
+			ftpClient.rename(from, to);
+			
+			return list(path, username, password);
+		} catch (final IOException e) {
+			return Response.status(500).build();
+		}
+	}
+	
 	@GET
 	@Path("/download/{filepath}")
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
