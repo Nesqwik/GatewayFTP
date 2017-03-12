@@ -1,5 +1,6 @@
 package car.tp2;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 
@@ -58,11 +59,11 @@ public class FtpResource {
 				return Response.status(401).entity(HtmlResponse.unauthorized()).build();
 			}
 			final String path = ftpClient.printWorkingDirectory();
-			
-			final int code = ftpClient.list(path);
+			int statusCode = path != null ? 200 : 500;
+
 			final FTPFile[] files = ftpClient.listFiles(path);
 			final String html = formatList(path, files, username, password);
-			return Response.status(code).entity(html).build();
+			return Response.status(statusCode).entity(html).build();
 		} catch (final IOException e) {
 			return Response.status(500).build();
 		}
@@ -77,13 +78,11 @@ public class FtpResource {
 			if (ftpClient == null) {
 				return Response.status(401).entity(HtmlResponse.unauthorized()).build();
 			}
-			path = getClearedPath(path);
-			path += "/";
-			System.out.println(path);
-			final int code = ftpClient.list(path);
+			path = getClearedPath(path) + "/";
+			
 			final FTPFile[] files = ftpClient.listFiles(path);
 			final String html = formatList(path, files, username, password);
-			return Response.status(code).entity(html).build();
+			return Response.status(200).entity(html).build();
 		} catch (final IOException e) {
 			return Response.status(500).build();
 		}
@@ -133,7 +132,7 @@ public class FtpResource {
 	}
 	
 	private String formatList(final String path, final FTPFile[] files, final String username, final String password) {
-		String html = "<html><body><table border=\"\">";
+		String html = "<html><head><meta charset=\"UTF-8\"></head><body><table border=\"\">";
 		//html += "<li>" + HtmlResponse.getButton(" -> ..", "/rest/tp2/ftp/list/" + getNormalizedPath(path + "../") , "POST", username, password) + "</li>";
 		if(!path.replace("//", "/").equals("/")) {			
 			html += newListLine(true, path, username, password, "..");
@@ -146,6 +145,7 @@ public class FtpResource {
 			}
 		}
 		html += "</table></body></html>";
+		System.out.println("html " + html);
 		return html;
 	}
 	

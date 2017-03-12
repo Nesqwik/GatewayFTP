@@ -13,14 +13,18 @@ public class FtpClientFactory {
 		try {
 			final String host = Constants.get("host");
 			final int port = Integer.parseInt(Constants.get("port"));
+			
 			client.connect(host, port);
-			client.login(username, password);
+			
+			if (client.login(username, password)) {
+				return client;
+			} else {
+				return null;
+			}
 		} catch (final SocketException e) {
 			throw new ConnectException("Impossible de se connecter au serveur ftp");
 		} catch (final IOException e) {
 			throw new ConnectException("Impossible de se connecter au serveur ftp");
 		}
-		
-		return client;
 	}
 }

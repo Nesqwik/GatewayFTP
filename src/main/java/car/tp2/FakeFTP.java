@@ -10,17 +10,18 @@ public class FakeFTP {
 	
 	private static FakeFtpServer fakeFtpServer = null;
 	
+	private static String user = "user";
+	private static String password = "password";
+	public static String rootDirectory = "/tmp/" + user;
+	
 	private static void init() {
 		fakeFtpServer = new FakeFtpServer();
-		String user = "user";
-		String password = "password";
-		
-		String rootDirectory = "/tmp/" + user; 
 		fakeFtpServer.addUserAccount(new UserAccount(user, password, rootDirectory));
 
 		UnixFakeFileSystem fileSystem = new UnixFakeFileSystem();
-		fileSystem.add(new DirectoryEntry(rootDirectory + "/test"));
+		fileSystem.add(new DirectoryEntry(rootDirectory + "/testfolder"));
 		fileSystem.add(new FileEntry(rootDirectory + "/testfile"));
+		fileSystem.add(new FileEntry(rootDirectory + "/testfolder" + "/testfile2"));
 		
 		fakeFtpServer.setFileSystem(fileSystem);
 
