@@ -1,6 +1,5 @@
 package car.tp2;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -71,7 +70,10 @@ public class FtpResource {
 
 			final FTPFile[] files = ftpClient.listFiles(path);
 			final String html = formatList(path, files, username, password);
-			return Response.status(statusCode).entity(html).build();
+			
+			Response r = Response.status(statusCode).entity(html).build();
+			ftpClient.disconnect();
+			return r;
 		} catch (final IOException e) {
 			return Response.status(500).build();
 		}
@@ -90,7 +92,10 @@ public class FtpResource {
 			
 			final FTPFile[] files = ftpClient.listFiles(path);
 			final String html = formatList(path, files, username, password);
-			return Response.status(200).entity(html).build();
+			
+			Response r = Response.status(200).entity(html).build();
+			ftpClient.disconnect();
+			return r;
 		} catch (final IOException e) {
 			return Response.status(500).build();
 		}
@@ -197,7 +202,10 @@ public class FtpResource {
 			System.out.println("remove : " + getClearedPath(path));
 			ftpClient.rmd(getClearedPath(path)); 
 			
-			return list(path + "/..", username, password);
+			Response r = list(path + "/..", username, password);
+			ftpClient.disconnect();
+			
+			return r;
 		} catch (final IOException e) {
 			return Response.status(500).build();
 		}
@@ -215,7 +223,9 @@ public class FtpResource {
 			System.out.println("remove : " + getClearedPath(path));
 			ftpClient.dele(getClearedPath(path)); 
 			
-			return list(path + "/..", username, password);
+			Response r = list(path + "/..", username, password);
+			ftpClient.disconnect();
+			return r;
 		} catch (final IOException e) {
 			return Response.status(500).build();
 		}
@@ -235,7 +245,9 @@ public class FtpResource {
 			
 			ftpClient.rename(from, to);
 			
-			return list(path, username, password);
+			Response r = list(path, username, password);
+			ftpClient.disconnect();
+			return r;
 		} catch (final IOException e) {
 			return Response.status(500).build();
 		}
@@ -255,11 +267,13 @@ public class FtpResource {
 			ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
 			ftpClient.setFileTransferMode(FTP.BINARY_FILE_TYPE);
 			ftpClient.setBufferSize(60000);
-			if(ftpClient.retrieveFile(filepath, response.getOutputStream())) {
+			
+			if (ftpClient.retrieveFile(filepath, response.getOutputStream())) {
 				response.getOutputStream().close();
 				ftpClient.disconnect();
 				return Response.ok().build();
 			}
+			
 			ftpClient.disconnect();
 			return Response.ok().build();
 		} catch (final IOException e) {
@@ -282,15 +296,20 @@ public class FtpResource {
 			if (ftpClient == null) {
 				return Response.status(401).entity(HtmlResponse.unauthorized()).build();
 			}
+			ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+			ftpClient.setFileTransferMode(FTP.BINARY_FILE_TYPE);
 			final String filepath = getClearedPath(path) + attachment.getDataHandler().getName();
-			ftpClient.storeFile(filepath, attachment.getDataHandler().getInputStream());
+			if (ftpClient.storeFile(filepath, attachment.getDataHandler().getInputStream())) {
+				Response r = list(path, username, password);
+				ftpClient.disconnect();
+				return r;
+			}
+			
+			ftpClient.disconnect();
+			return Response.ok().build();
 		} catch (final IOException e) {
 			return Response.ok().build();
 		}
-		
-
-		return list(path, username, password);
-
 	} 
 	
 	@POST
@@ -306,7 +325,9 @@ public class FtpResource {
 			
 			ftpClient.mkd(createPath);
 			
-			return list(path, username, password);
+			Response r = list(path, username, password);
+			ftpClient.disconnect();
+			return r;
 		} catch (final IOException e) {
 			return Response.status(500).build();
 		}

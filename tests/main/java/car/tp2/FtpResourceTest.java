@@ -98,10 +98,39 @@ public class FtpResourceTest {
 		given().
 			queryParam("username", user).
 			queryParam("password", pass).
+			pathParam("path", "testfolder").
 		expect().
 			statusCode(200).
 			body(containsString("testfile2")).
 		when().
-			get("list/testfolder");
+			get("list/{path}");
+	}
+	
+	@Test
+	public void testMkdir() {
+		given().
+			formParam("name", "testdir2").
+			queryParam("username", user).
+			queryParam("password", pass).
+			pathParam("path", FakeFTP.rootDirectory).
+		expect().
+			statusCode(200).
+			body(containsString("testdir2")).
+		when().
+			post("mkdir/{path}");
+	}
+	
+	@Test
+	public void testRmdir() {
+		given().
+			formParam("name", "testdir2").
+			queryParam("username", user).
+			queryParam("password", pass).
+			pathParam("path", FakeFTP.rootDirectory).
+		expect().
+			statusCode(200).
+			body(not(containsString("testdir2"))).
+		when().
+			post("mkdir/{path}");
 	}
 }
