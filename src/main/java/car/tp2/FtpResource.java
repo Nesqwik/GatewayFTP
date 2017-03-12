@@ -33,7 +33,20 @@ public class FtpResource {
 	}
 	
 	private final FtpClientFactory ftpClientFactory = new FtpClientFactory();
-
+	
+	@GET
+	@Path("/")
+	@Produces(MediaType.TEXT_HTML)
+	public String loginForm() {
+		return HtmlResponse.loginForm();
+	}
+	
+	@POST
+	@Path("/login")
+	@Produces(MediaType.TEXT_HTML)
+	public Response login(@FormParam("username") final String username, @FormParam("password") final String password) {
+		return list(username, password);
+	}
 	
 	@GET
 	@Path("/list")
@@ -87,6 +100,14 @@ public class FtpResource {
 	private String newListLine(final boolean isDir, final String path, final String username, final String password, final String name) {
 		final String idsParams = "?username=" + username + "&password=" + password;
 		if(isDir) {
+			if(name.equals("..")) {
+				return "<tr>" + 
+						"<td>Dir</td>" +
+						"<td><a href=\"/rest/tp2/ftp/list/" + getNormalizedPath(path + "./" + name) + idsParams + "\" >"+name+"</a></td>" + 
+						"<td></td>" + 
+						"<td></td>" + 
+						"</tr>";
+			}
 			return "<tr>" + 
 					"<td>Dir</td>" +
 					"<td><a href=\"/rest/tp2/ftp/list/" + getNormalizedPath(path + "./" + name) + idsParams + "\" >"+name+"</a></td>" + 
@@ -114,7 +135,9 @@ public class FtpResource {
 	private String formatList(final String path, final FTPFile[] files, final String username, final String password) {
 		String html = "<html><body><table border=\"\">";
 		//html += "<li>" + HtmlResponse.getButton(" -> ..", "/rest/tp2/ftp/list/" + getNormalizedPath(path + "../") , "POST", username, password) + "</li>";
-		html += newListLine(true, path, username, password, "..");
+		if(!path.replace("//", "/").equals("/")) {			
+			html += newListLine(true, path, username, password, "..");
+		}
 		for(final FTPFile f : files) {
 			if(f.isDirectory()) {
 				html += newListLine(true, path, username, password, f.getName());
