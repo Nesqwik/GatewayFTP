@@ -18,8 +18,8 @@ public class Starter {
 	
 	public static void main( final String[] args ) throws Exception {
 		
-		Server server = new Server( 8080 );
-		        
+		final Server server = new Server( 8080 );
+		
  		final ServletHolder servletHolder = new ServletHolder( new CXFServlet() );
  		final ServletContextHandler context = new ServletContextHandler(); 		
  		context.setContextPath( "/" );
