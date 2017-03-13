@@ -5,9 +5,6 @@ import java.io.OutputStream;
 import java.net.ConnectException;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.StreamingOutput;
 
 import org.apache.commons.net.ftp.FTP;
@@ -20,6 +17,13 @@ import car.tp2.utils.FtpRequestException;
 import car.tp2.utils.HtmlResponse;
 import car.tp2.utils.Utils;
 
+/**
+ * 
+ * @author Louis GUILBERT et Jonathan LECOINTE
+ *
+ * FTPService : 
+ * Permet de fournir les services nécessaire à la passerelle pour gérer le ftp
+ */
 public class FTPService {
 	private final FtpClientFactory ftpClientFactory = new FtpClientFactory();
 	
@@ -60,6 +64,14 @@ public class FTPService {
 		return html;
 	}
 	
+	/**
+	 * Crée la liste des fichiers au format html
+	 * @param path chemin vers le dossier de fichier à récupérer
+	 * @param username nom d'utilisateur ftp
+	 * @param password mot de passe ftp
+	 * @return la liste formatté en html
+	 * @throws FtpRequestException si une erreur arrive lors de la création de la liste. Contient le code d'erreur
+	 */
 	public String list(final String path, final String username, final String password) throws FtpRequestException {
 		try {
 			final FTPClient ftpClient = getFtpClient(username, password);
@@ -88,6 +100,13 @@ public class FTPService {
 		ftpClient.rmd(path);
 	}
 	
+	/**
+	 * 
+	 * @param path chemin vers le dossier à supprimer (récursivement)
+	 * @param username nom d'utilisateur ftp
+	 * @param password mot de passe ftp
+	 * @throws FtpRequestException si une erreur arrive lors de l'action. Contient le code d'erreur
+	 */
 	public void rmdir(final String path, final String username, final String password) throws FtpRequestException {
 		try {
 			final FTPClient ftpClient = getFtpClient(username, password);
@@ -99,6 +118,12 @@ public class FTPService {
 	}
 	
 	
+	/**
+	 * @param path chemin vers le fichier à supprimer
+	 * @param username nom d'utilisateur ftp
+	 * @param password mot de passe ftp
+	 * @throws FtpRequestException si une erreur arrive lors de l'action. Contient le code d'erreur
+	 */
 	public void dele(final String path, final String username, final String password) throws FtpRequestException {
 		try {
 			final FTPClient ftpClient = getFtpClient(username, password);
@@ -109,7 +134,15 @@ public class FTPService {
 		}
 	}
 	
-	
+	/**
+	 * Renomme le fichier ou dossier
+	 * @param path chemin vers le dossier contenant le fichier ou dossier à renommer
+	 * @param oldName ancien nom
+	 * @param newName nouveau nom
+	 * @param username nom d'utilisateur ftp
+	 * @param password mot de passe ftp
+	 * @throws FtpRequestException si une erreur arrive lors de l'action. Contient le code d'erreur
+	 */
 	public void rename(final String path, final String oldName, final String newName, final String username, final String password) throws FtpRequestException {
 		try {
 			final FTPClient ftpClient = getFtpClient(username, password);
@@ -125,7 +158,14 @@ public class FTPService {
 		}
 	}
 	
-	
+	/**
+	 * Télécharge le fichier spécifié
+	 * @param filepath chemin vers le fichier
+	 * @param response réponse du contexte
+	 * @param username nom d'utilisateur ftp
+	 * @param password mot de passe ftp
+	 * @return le stream dans lequel est écris le fichier
+	 */
 	public StreamingOutput download(final String filepath, final HttpServletResponse response, final String username, final String password) {
 		final StreamingOutput stream = new StreamingOutput() {
 			@Override
@@ -153,7 +193,14 @@ public class FTPService {
 		return stream;
 	}
 	
-	
+	/**
+	 * Upload le fichier passé en paramètre
+	 * @param attachment descripteur du fichier
+	 * @param path chemin vers le dossier contenant le fichier à uploader
+	 * @param username nom d'utilisateur ftp
+	 * @param password mot de passe ftp
+	 * @throws FtpRequestException si une erreur arrive lors de l'action. Contient le code d'erreur
+	 */
 	public void uploadFile(final Attachment attachment, final String path, final String username, final String password) throws FtpRequestException {
 		try {
 			final FTPClient ftpClient = getFtpClient(username, password);
@@ -171,7 +218,15 @@ public class FTPService {
 		}
 	}
 	
-	public void mkdir(@PathParam("path") final String path, @FormParam("name") final String name, @QueryParam("username") final String username, @QueryParam("password") final String password) throws FtpRequestException {
+	/**
+	 * permet de créer un dossier
+	 * @param path chemin vers le dossier dans lequel créer le nouveau dossier
+	 * @param name le nom du nouveau dossier
+	 * @param username nom d'utilisateur ftp
+	 * @param password mot de passe ftp
+	 * @throws FtpRequestException si une erreur arrive lors de l'action. Contient le code d'erreur
+	 */
+	public void mkdir(final String path, final String name, final String username, final String password) throws FtpRequestException {
 		try {
 			final FTPClient ftpClient = getFtpClient(username, password);
 			final String createPath = path + "/" + name;

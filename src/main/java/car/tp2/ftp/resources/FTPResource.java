@@ -18,28 +18,26 @@ import org.apache.cxf.jaxrs.ext.multipart.Multipart;
 
 import com.sun.istack.NotNull;
 
-import car.tp2.ftp.FtpClientFactory;
 import car.tp2.ftp.services.FTPService;
 import car.tp2.utils.FtpRequestException;
 import car.tp2.utils.HtmlResponse;
 import car.tp2.utils.Utils;
 
 /**
- * Exemple de ressource REST accessible a l'adresse :
  * 
- * 		http://localhost:8080/rest/tp2/helloworld
- * 
+ * @author Louis GUILBERT et Jonathan LECOINTE
+ *
+ * FTPResource : 
+ * Controlleur permettant de gérer les requêtes HTTP
  */
 @Path("/ftp")
 public class FTPResource {
-	private final FtpClientFactory ftpClientFactory = new FtpClientFactory();
 	private final FTPService ftpService = new FTPService();
-
-	public FTPResource() {
-
-	}
 	
-	
+	/**
+	 * Resource générant le formulaire de connexion
+	 * @return le formulaire de connexion
+	 */
 	@GET
 	@Path("/")
 	@Produces(MediaType.TEXT_HTML)
@@ -47,6 +45,12 @@ public class FTPResource {
 		return HtmlResponse.loginForm();
 	}
 	
+	/**
+	 * Resource permettant la connexion au serveur ftp
+	 * @param username nom d'utilisateur ftp
+	 * @param password mot de passe ftp
+	 * @return la liste des fichiers à la racine du dossier utilisateur
+	 */
 	@POST
 	@Path("/login")
 	@Produces(MediaType.TEXT_HTML)
@@ -54,6 +58,12 @@ public class FTPResource {
 		return list(username, password);
 	}
 	
+	/**
+	 * Resource permettant la création de la liste des fichiers du serveur ftp
+	 * @param username nom d'utilisateur ftp
+	 * @param password mot de passe ftp
+	 * @return la liste des fichiers à la racine du dossier utilisateur
+	 */
 	@GET
 	@Path("/list")
 	@Produces(MediaType.TEXT_HTML)
@@ -65,6 +75,13 @@ public class FTPResource {
 		}
 	}
 	
+	/**
+	 * Resource permettant la création de la liste des fichiers du serveur ftp
+	 * @param path chemin vers le dossier à lister
+	 * @param username nom d'utilisateur ftp
+	 * @param password mot de passe ftp
+	 * @return la liste des fichiers du dossier spécifié
+	 */
 	@GET
 	@Path("/list/{path: .*}")
 	@Produces(MediaType.TEXT_HTML)
@@ -76,6 +93,13 @@ public class FTPResource {
 		}
 	}
 
+	/**
+	 * supprime le dossier ayant le chemin spécifié
+	 * @param path chemin vers le dossier à supprimer
+	 * @param username nom d'utilisateur ftp
+	 * @param password mot de passe ftp
+	 * @return la liste du dossier parent du dossier spécifié
+	 */
 	@GET
 	@Path("/rmdir/{path: .*}")
 	@Produces(MediaType.TEXT_HTML)
@@ -88,6 +112,13 @@ public class FTPResource {
 		}
 	}
 	
+	/**
+	 * supprime le fichier ayant le chemin spécifié
+	 * @param path chemin vers le fichier à supprimer
+	 * @param username nom d'utilisateur ftp
+	 * @param password mot de passe ftp
+	 * @return la liste du dossier parent du fichier spécifié
+	 */
 	@GET
 	@Path("/dele/{path: .*}")
 	@Produces(MediaType.TEXT_HTML)
@@ -100,6 +131,15 @@ public class FTPResource {
 		}
 	}
 	
+	/**
+	 * renomme le fichier ou dossier spécifié
+	 * @param path chemin vers le dossier dans lequel se trouve le fichier ou dossier à renommer
+	 * @param oldName ancien nom du fichier ou dossier
+	 * @param newName nouveau nom du fichier ou dossier
+	 * @param username nom d'utilisateur ftp
+	 * @param password mot de passe ftp
+	 * @return la liste du dossier spécifié par path
+	 */
 	@POST
 	@Path("/rename/{path: .*}")
 	@Produces(MediaType.TEXT_HTML)
@@ -112,6 +152,14 @@ public class FTPResource {
 		}
 	}
 	
+	/**
+	 * Télécharge le fichier spécifié
+	 * @param filepath chemin vers le fichier à télécharger
+	 * @param response réponse du context
+	 * @param username nom d'utilisateur ftp
+	 * @param password mot de passe ftp
+	 * @return le fichier à télécharger
+	 */
 	@GET
 	@Path("/download/{filepath: .*}")
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
@@ -120,7 +168,14 @@ public class FTPResource {
 		
 	}
 	
-	
+	/**
+	 * Récupère le fichier envoyé
+	 * @param attachment le descripteur de fichier à uploader
+	 * @param path chemin vers le dossier ou va s'uploader le fichier
+	 * @param username nom d'utilisateur ftp
+	 * @param password mot de passe ftp
+	 * @return la liste du chemin passé en paramètre
+	 */
 	@POST
 	@Path("/upload/{path: .*}")
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -138,6 +193,14 @@ public class FTPResource {
 		
 	} 
 	
+	/**
+	 * permet de créer un dossier
+	 * @param path chemin vers le dossier dans lequel créer le nouveau dossier
+	 * @param name le nom du nouveau dossier
+	 * @param username nom d'utilisateur ftp
+	 * @param password mot de passe ftp
+	 * @return la liste du chemin passé en paramètre
+	 */
 	@POST
 	@Path("/mkdir/{path: .*}")
 	@Produces(MediaType.TEXT_HTML)
