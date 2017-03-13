@@ -76,9 +76,6 @@ public class FtpResourceTest {
 	
 	@Test
 	public void testList() {
-		
-		System.out.println(FakeFTP.getInstance().getFileSystem());
-		
 		given().
 			queryParam("username", user).
 			queryParam("password", pass).
@@ -88,7 +85,6 @@ public class FtpResourceTest {
 			body(containsString("testfolder")).
 		when().
 			get("list");
-		
 	}
 	
 	@Test
