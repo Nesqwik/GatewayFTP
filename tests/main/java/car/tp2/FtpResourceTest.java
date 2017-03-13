@@ -9,14 +9,7 @@ import java.io.IOException;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(FTPClientProvider.class)
-@PowerMockIgnore("javax.net.ssl.*")
 public class FtpResourceTest {
 	
 	private String user = "user";
@@ -107,30 +100,161 @@ public class FtpResourceTest {
 	}
 	
 	@Test
-	public void testMkdir() {
+	public void testMkdirFailure() {
+		// The folder testfolder already exists, mkdir will fail
+		String newDir = "testfolder";
+		
 		given().
-			formParam("name", "testdir2").
+			formParam("name", newDir).
 			queryParam("username", user).
 			queryParam("password", pass).
 			pathParam("path", FakeFTP.rootDirectory).
 		expect().
-			statusCode(200).
-			body(containsString("testdir2")).
+			statusCode(500).
 		when().
 			post("mkdir/{path}");
 	}
 	
 	@Test
-	public void testRmdir() {
+	public void testMkdirSuccess() {
+		String newDir = "testfolder2";
+		
 		given().
-			formParam("name", "testdir2").
+			formParam("name", newDir).
 			queryParam("username", user).
 			queryParam("password", pass).
 			pathParam("path", FakeFTP.rootDirectory).
 		expect().
 			statusCode(200).
-			body(not(containsString("testdir2"))).
+			body(containsString(newDir)).
 		when().
 			post("mkdir/{path}");
+	}
+	
+	@Test
+	public void testRmdirSuccess() {
+		String dirToDelete = "testfolder2";
+		String path = FakeFTP.rootDirectory + "/" + dirToDelete;
+
+		//We create a dir. We know it's safe, because we tested mkdir atomically in another test
+		given().
+			formParam("name", dirToDelete).
+			queryParam("username", user).
+			queryParam("password", pass).
+			pathParam("path", FakeFTP.rootDirectory).
+		when().
+			post("mkdir/{path}");
+		
+		given().
+			queryParam("username", user).
+			queryParam("password", pass).
+			pathParam("path", path).
+		expect().
+			statusCode(200).
+			body(not(containsString(dirToDelete))).
+		when().
+			get("rmdir/{path}");
+	}
+	
+	@Test
+	public void testRmdirFailure() {
+		String dirToDelete = "testdir2";
+		String path = FakeFTP.rootDirectory + "/" + dirToDelete;
+		
+		// We delete a folder that doesn't exist
+		given().
+			queryParam("username", user).
+			queryParam("password", pass).
+			pathParam("path", path).
+		expect().
+			statusCode(500).
+		when().
+			get("rmdir/{path}");
+	}
+	
+	@Test
+	public void testDeleSuccess() {
+		String newFile = "testfile";
+		String path = FakeFTP.rootDirectory + "/" + newFile;
+
+		given().
+			queryParam("username", user).
+			queryParam("password", pass).
+			pathParam("path", path).
+		expect().
+			statusCode(200).
+			body(not(containsString(newFile))).
+		when().
+			get("dele/{path}");
+	}
+	
+	@Test
+	public void testDeleFailure() {
+		String newFile = "testfile42";
+		String path = FakeFTP.rootDirectory + "/" + newFile;
+		
+		// The file doesn't exist, the dele should fail
+
+		given().
+			queryParam("username", user).
+			queryParam("password", pass).
+			pathParam("path", path).
+		expect().
+			statusCode(500).
+		when().
+			get("rmdir/{path}");
+	}
+	
+	@Test
+	public void testRenameSuccess() {
+		String oldName = "testfile100";
+		String newName = "testfile50";
+		String path = FakeFTP.rootDirectory;
+		
+		given().
+			formParam("oldName", oldName).
+			formParam("newName", newName).
+			queryParam("username", user).
+			queryParam("password", pass).
+			pathParam("path", path).
+		expect().
+			statusCode(200).
+			body(containsString(newName)).
+			body(not(containsString(oldName))).
+		when().
+			post("rename/{path}");
+		
+		given().
+			formParam("oldName", newName).
+			formParam("newName", oldName).
+			queryParam("username", user).
+			queryParam("password", pass).
+			pathParam("path", path).
+		expect().
+			statusCode(200).
+			body(containsString(oldName)).
+			body(not(containsString(newName))).
+		when().
+			post("rename/{path}");
+	}
+	
+	@Test
+	public void testRenameFailure() {
+		String oldName = "testfile140";
+		String newName = "testfile50";
+		String path = FakeFTP.rootDirectory;
+		
+		// The old file doesn't exist, the rename should fail
+
+		given().
+			formParam("oldName", oldName).
+			formParam("newName", newName).
+			queryParam("username", user).
+			queryParam("password", pass).
+			pathParam("path", path).
+		expect().
+			statusCode(500).
+		when().
+			post("rename/{path}");
 	}
 }
