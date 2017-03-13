@@ -59,7 +59,9 @@ public class FTPResource {
 	@Produces(MediaType.TEXT_HTML)
 	public Response list(@QueryParam("username") final String username, @QueryParam("password") final String password) {
 		try {
-			return Response.ok(ftpService.list("/", username, password)).build();
+			String workingDirectory = ftpService.pwd(username, password);
+			System.out.println(workingDirectory);
+			return Response.ok(ftpService.list(workingDirectory, username, password)).build();
 		} catch (final FtpRequestException e) {
 			return Response.status(e.getCode()).entity(e.getData()).build();
 		}

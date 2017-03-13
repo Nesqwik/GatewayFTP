@@ -27,7 +27,7 @@ public class Starter {
 		if (args.length == 1 && args[0].equals("test")) {
 			final FakeFtpServer fake = FakeFTP.getInstance();
 			Constants.put("host", "localhost");
-			Constants.put("port", fake.getServerControlPort() + "");
+			Constants.put("ftpPort", fake.getServerControlPort() + "");
 			Constants.put("serverPort", "8080");
 			Constants.put("ftpMode", "actif");
 			System.out.println(Constants.get("port"));

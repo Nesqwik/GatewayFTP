@@ -49,7 +49,9 @@ public class FTPService {
 		if(!path.isEmpty() && !path.equals("/")) {			
 			html += HtmlResponse.newListLine(true, path, idsParams, "..");
 		}
+		System.out.println("path " + path);
 		for(final FTPFile f : files) {
+			System.out.println(f.getName());
 			if(f.isDirectory()) {
 				html += HtmlResponse.newListLine(true, path, idsParams, f.getName());
 			} else {
@@ -75,17 +77,33 @@ public class FTPService {
 		}
 	}
 	
+	public String pwd(final String username, final String password) throws FtpRequestException {
+		final FTPClient ftpClient = getFtpClient(username, password);
+		String pwd;
+		try {
+			pwd = ftpClient.printWorkingDirectory();
+			ftpClient.disconnect();
+			return pwd;
+		} catch (IOException e) {
+			throw new FtpRequestException(500);
+		}
+	}
 	
-	private void recursiveRmdir(final String path, final FTPClient ftpClient) throws IOException {
+	
+	private void recursiveRmdir(final String path, final FTPClient ftpClient) throws IOException, FtpRequestException {
 		final FTPFile[] files = ftpClient.listFiles(path);
 		for(final FTPFile f : files) {
 			if(f.isDirectory()) {
 				recursiveRmdir(path + "/" + f.getName(), ftpClient);
 			} else {
-				ftpClient.dele(path + "/" + f.getName());
+				if (ftpClient.dele(path + "/" + f.getName()) == 550) {
+					throw new FtpRequestException(500);
+				}
 			}
 		}
-		ftpClient.rmd(path);
+		if (ftpClient.rmd(path) == 550) {
+			throw new FtpRequestException(500);
+		}
 	}
 	
 	public void rmdir(final String path, final String username, final String password) throws FtpRequestException {
@@ -93,7 +111,7 @@ public class FTPService {
 			final FTPClient ftpClient = getFtpClient(username, password);
 			recursiveRmdir(path, ftpClient);
 			ftpClient.disconnect();
-		} catch (final IOException e) {
+		} catch (final IOException | FtpRequestException e) {
 			throw new FtpRequestException(500);
 		}
 	}
@@ -102,7 +120,9 @@ public class FTPService {
 	public void dele(final String path, final String username, final String password) throws FtpRequestException {
 		try {
 			final FTPClient ftpClient = getFtpClient(username, password);
-			ftpClient.dele(path); 
+			if (ftpClient.dele(path) == 550) {
+				throw new FtpRequestException(500);
+			}
 			ftpClient.disconnect();
 		} catch (final IOException e) {
 			throw new FtpRequestException(500);
@@ -116,8 +136,9 @@ public class FTPService {
 			final String from = path + "/" + oldName;
 			final String to = path + "/" + newName;
 			
-			ftpClient.rename(from, to);
-			
+			if (!ftpClient.rename(from, to)) {
+				throw new FtpRequestException(500);
+			}
 			
 			ftpClient.disconnect();
 		} catch (final IOException e) {
@@ -176,7 +197,9 @@ public class FTPService {
 			final FTPClient ftpClient = getFtpClient(username, password);
 			final String createPath = path + "/" + name;
 			
-			ftpClient.mkd(createPath);
+			if (ftpClient.mkd(createPath) == 550) {
+				throw new FtpRequestException(500);
+			}
 			ftpClient.disconnect();
 		} catch (final IOException e) {
 			throw new FtpRequestException(500);
