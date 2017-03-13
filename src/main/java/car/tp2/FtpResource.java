@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -188,8 +189,6 @@ public class FtpResource {
 	}
 	
 	
-	
-
 	@GET
 	@Path("/rmdir/{path}")
 	@Produces(MediaType.TEXT_HTML)
@@ -200,11 +199,18 @@ public class FtpResource {
 				return Response.status(401).entity(HtmlResponse.unauthorized()).build();
 			}
 			System.out.println("remove : " + getClearedPath(path));
-			ftpClient.rmd(getClearedPath(path)); 
+			int code = ftpClient.rmd(getClearedPath(path));
 			
-			Response r = list(path + "/..", username, password);
+			Response r;
+			
+			if (code == 550) {
+				// Failure of rmdir
+				r = Response.status(500).build();
+			} else {
+				r = list(path + "/..", username, password);
+			}
+			
 			ftpClient.disconnect();
-			
 			return r;
 		} catch (final IOException e) {
 			return Response.status(500).build();
@@ -221,9 +227,17 @@ public class FtpResource {
 				return Response.status(401).entity(HtmlResponse.unauthorized()).build();
 			}
 			System.out.println("remove : " + getClearedPath(path));
-			ftpClient.dele(getClearedPath(path)); 
+			int code = ftpClient.dele(getClearedPath(path));
 			
-			Response r = list(path + "/..", username, password);
+			Response r;
+			
+			if (code == 550) {
+				// Failure of rmdir
+				r = Response.status(500).build();
+			} else {
+				r = list(path + "/..", username, password);
+			}
+			
 			ftpClient.disconnect();
 			return r;
 		} catch (final IOException e) {
@@ -242,10 +256,15 @@ public class FtpResource {
 			}
 			final String from = getClearedPath(path) + "/" + oldName;
 			final String to = getClearedPath(path) + "/" + newName;
+			Response r;
 			
-			ftpClient.rename(from, to);
 			
-			Response r = list(path, username, password);
+			if (ftpClient.rename(from, to)) {
+				r = list(path, username, password);
+			} else {
+				r = Response.status(500).build();
+			}
+			
 			ftpClient.disconnect();
 			return r;
 		} catch (final IOException e) {
@@ -323,9 +342,16 @@ public class FtpResource {
 			}
 			final String createPath = getClearedPath(path) + "/" + name;
 			
-			ftpClient.mkd(createPath);
+			int code = ftpClient.mkd(createPath);
+			Response r;
 			
-			Response r = list(path, username, password);
+			if (code == 550) {
+				// Failure of mkdir
+				r = Response.status(500).build();
+			} else {
+				r = list(path, username, password);
+			}
+			
 			ftpClient.disconnect();
 			return r;
 		} catch (final IOException e) {
