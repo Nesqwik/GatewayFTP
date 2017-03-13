@@ -1,4 +1,4 @@
-package car.tp2;
+package car.tp2.utils;
 
 import java.util.HashMap;
 import java.util.Map;

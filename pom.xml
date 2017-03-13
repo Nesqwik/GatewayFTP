@@ -312,7 +312,11 @@
 		</dependency>
     </dependencies>
     <properties>
-        <exec.mainClass>car.tp2.Starter</exec.mainClass>
+        <exec.mainClass>car.tp2.ftp.Starter</exec.mainClass>
+        <server.port>8080</server.port>
+        <ftp.host>localhost</ftp.host>
+        <ftp.port>21</ftp.port>
+        <ftp.mode>true</ftp.mode>
     </properties>
 
 </project>

@@ -1,4 +1,4 @@
-package car.tp2;
+package car.tp2.ftp;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +16,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 
+import car.tp2.ftp.resources.FTPResource;
+
 /**
  * Configuration de l'application.
  * Declaration des classes de ressource REST.
@@ -30,7 +32,7 @@ public class Config {
 	 * Ajouter une ligne par classe de ressource REST.
 	 */
 	protected void addResources( List<Object> resources ) {
-		resources.add( new FtpResource() );
+		resources.add( new FTPResource() );
 		// resources.add( new MaClasseDeResource() );
 	}
 	
