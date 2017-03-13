@@ -21,7 +21,7 @@ public class FakeFTP {
 		UnixFakeFileSystem fileSystem = new UnixFakeFileSystem();
 		
 		fileSystem.add(new DirectoryEntry(rootDirectory + "/testfolder"));
-		fileSystem.add(new FileEntry(rootDirectory + "/testfile"));
+		fileSystem.add(new FileEntry(rootDirectory + "/testfiledele"));
 		fileSystem.add(new FileEntry(rootDirectory + "/testfile100"));
 		fileSystem.add(new FileEntry(rootDirectory + "/testfolder" + "/testfile2"));
 		

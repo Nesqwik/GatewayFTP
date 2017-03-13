@@ -9,6 +9,8 @@ import java.io.IOException;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockftpserver.fake.filesystem.FileEntry;
+import org.mockftpserver.fake.filesystem.UnixFakeFileSystem;
 
 public class FtpResourceTest {
 	
@@ -74,12 +76,15 @@ public class FtpResourceTest {
 	
 	@Test
 	public void testList() {
+		
+		System.out.println(FakeFTP.getInstance().getFileSystem());
+		
 		given().
 			queryParam("username", user).
 			queryParam("password", pass).
 		expect().
 			statusCode(200).
-			body(containsString("testfile")).
+			body(containsString("testfile100")).
 			body(containsString("testfolder")).
 		when().
 			get("list");
@@ -133,7 +138,7 @@ public class FtpResourceTest {
 	
 	@Test
 	public void testRmdirSuccess() {
-		String dirToDelete = "testfolder2";
+		String dirToDelete = "testfolderRmdir";
 		String path = FakeFTP.rootDirectory + "/" + dirToDelete;
 
 		//We create a dir. We know it's safe, because we tested mkdir atomically in another test
@@ -174,9 +179,9 @@ public class FtpResourceTest {
 	
 	@Test
 	public void testDeleSuccess() {
-		String newFile = "testfile";
+		String newFile = "testfiledele";
 		String path = FakeFTP.rootDirectory + "/" + newFile;
-
+		
 		given().
 			queryParam("username", user).
 			queryParam("password", pass).
@@ -190,7 +195,7 @@ public class FtpResourceTest {
 	
 	@Test
 	public void testDeleFailure() {
-		String newFile = "testfile42";
+		String newFile = "testfiledelefailure";
 		String path = FakeFTP.rootDirectory + "/" + newFile;
 		
 		// The file doesn't exist, the dele should fail
@@ -202,7 +207,7 @@ public class FtpResourceTest {
 		expect().
 			statusCode(500).
 		when().
-			get("rmdir/{path}");
+			get("dele/{path}");
 	}
 	
 	@Test
