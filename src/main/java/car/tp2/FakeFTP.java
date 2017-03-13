@@ -19,8 +19,10 @@ public class FakeFTP {
 		fakeFtpServer.addUserAccount(new UserAccount(user, password, rootDirectory));
 
 		UnixFakeFileSystem fileSystem = new UnixFakeFileSystem();
+		
 		fileSystem.add(new DirectoryEntry(rootDirectory + "/testfolder"));
 		fileSystem.add(new FileEntry(rootDirectory + "/testfile"));
+		fileSystem.add(new FileEntry(rootDirectory + "/testfile100"));
 		fileSystem.add(new FileEntry(rootDirectory + "/testfolder" + "/testfile2"));
 		
 		fakeFtpServer.setFileSystem(fileSystem);
